@@ -1,39 +1,38 @@
-const Seller=require('../models/Seller');
-const adminToken = require('../utlis/adminToken');
-const generateToken= require('../utlis/adminToken')
+const User=require('../../models/User')
+const generateToken= require('../../utlis/generateToken')
 const bcrypt = require('bcrypt');
 
 
 const Signup = async (req, res) => {
     try {
-      const { email, password, name,role } = req.body
+      const { email, password, fullname } = req.body
      
    
-      const sellerExist = await Seller.findOne({ email });
+      const userExist = await User.findOne({ email });
       
       
-      if (sellerExist) {
-        return res.send("seller is already exist");
+      if (userExist) {
+        return res.send("User is already exist");
       }
       
       const saltRounds = 10;
       const hashpassword = await bcrypt.hash(password, saltRounds);
       
-      const newSeller = new Seller({
+      const newUser = new User({
         email,
-        name,
+        fullname,
         password:hashpassword,
-        role,
+        role:"user"
       });
       
       
-      const newSellerCreated = await newSeller.save();
+      const newUserCreated = await newUser.save();
   
-      if (!newSellerCreated) {
-        return res.send("Seller is not created");
+      if (!newUserCreated) {
+        return res.send("user is not created");
       }
   
-      const token = adminToken(newSellerCreated);
+      const token = generateToken(email);
       
       res.cookie("token", token)
       res.send("Signed successfully!");
@@ -48,21 +47,20 @@ const Signup = async (req, res) => {
    const Signin = async (req, res) => {
     try {
       const { email, password } = req.body;
-      console.log(email)
    
-      const seller = await Seller.findOne({ email });
+      const user = await User.findOne({ email });
   
-      if (!seller) {
+      if (!user) {
         return res.send("User not found");
       }
   
-      const matchPassword = await bcrypt.compare(password, seller.password);
+      const matchPassword = await bcrypt.compare(password, user.password);
   
       if (!matchPassword) {
         return res.send("Password is not correct");
       }
   
-      const token = adminToken(Seller);
+      const token = generateToken(email);
       res.cookie("token", token);
       res.send("Logged in!");
     } catch (error) {
